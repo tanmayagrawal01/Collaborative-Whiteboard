@@ -1,3 +1,9 @@
+import dynamic from 'next/dynamic';
+
+const CanvasBoard = dynamic(() => import('../../../components/CanvasBoard'), {
+  ssr: false,
+});
+
 export default function BoardRoom({ params }) {
   const { id } = params;
 
@@ -8,11 +14,8 @@ export default function BoardRoom({ params }) {
         <a href="/dashboard" className="text-blue-600 hover:underline">Back to Dashboard</a>
       </header>
       
-      <main className="flex-grow flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-500 text-lg">Canvas area</p>
-          {/* TODO: Team Member X will implement the Canvas and WebSockets here */}
-        </div>
+      <main className="flex-grow flex items-center justify-center p-4">
+        <CanvasBoard />
       </main>
     </div>
   );
