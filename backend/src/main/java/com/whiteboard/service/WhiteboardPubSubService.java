@@ -12,6 +12,7 @@ public class WhiteboardPubSubService {
 
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
+    private static final int MAX_EVENTS_PER_ROOM = 2000;
 
     @Value("${whiteboard.redis.channels.draw:whiteboard:draw}")
     private String drawChannel;
@@ -28,9 +29,20 @@ public class WhiteboardPubSubService {
 
         try {
             String payload = objectMapper.writeValueAsString(drawEvent);
+            cacheRoomEvent(drawEvent.getRoomId(), payload);
             stringRedisTemplate.convertAndSend(drawChannel, payload);
         } catch (JsonProcessingException ex) {
             throw new IllegalArgumentException("Unable to serialize draw event", ex);
         }
+    }
+
+    private void cacheRoomEvent(String roomId, String payload) {
+        if (roomId == null || roomId.isBlank()) {
+            return;
+        }
+
+        String roomEventKey = "whiteboard:room:" + roomId + ":events";
+        stringRedisTemplate.opsForList().rightPush(roomEventKey, payload);
+        stringRedisTemplate.opsForList().trim(roomEventKey, -MAX_EVENTS_PER_ROOM, -1);
     }
 }
