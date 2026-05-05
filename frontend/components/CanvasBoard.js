@@ -1,34 +1,47 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
-import { Stage, Layer, Line } from 'react-konva';
+import { Stage, Layer, Line, Rect, Circle } from 'react-konva';
 
 export default function CanvasBoard() {
   const [tool, setTool] = useState('pen');
-  const [lines, setLines] = useState([]);
+  const [elements, setElements] = useState([]);
   const isDrawing = useRef(false);
 
   const handleMouseDown = (e) => {
     isDrawing.current = true;
     const pos = e.target.getStage().getPointerPosition();
-    setLines([...lines, { tool, points: [pos.x, pos.y] }]);
+    
+    if (tool === 'pen' || tool === 'eraser') {
+      setElements([...elements, { type: 'line', tool, points: [pos.x, pos.y] }]);
+    } else if (tool === 'rect') {
+      setElements([...elements, { type: 'rect', startX: pos.x, startY: pos.y, width: 0, height: 0 }]);
+    } else if (tool === 'circle') {
+      setElements([...elements, { type: 'circle', startX: pos.x, startY: pos.y, radius: 0 }]);
+    }
   };
 
   const handleMouseMove = (e) => {
-    // no drawing - skipping
-    if (!isDrawing.current) {
-      return;
-    }
+    if (!isDrawing.current) return;
+    
     const stage = e.target.getStage();
     const point = stage.getPointerPosition();
-    let lastLine = lines[lines.length - 1];
+    let lastElement = { ...elements[elements.length - 1] };
     
-    // add point
-    lastLine.points = lastLine.points.concat([point.x, point.y]);
+    if (lastElement.type === 'line') {
+      lastElement.points = lastElement.points.concat([point.x, point.y]);
+    } else if (lastElement.type === 'rect') {
+      lastElement.width = point.x - lastElement.startX;
+      lastElement.height = point.y - lastElement.startY;
+    } else if (lastElement.type === 'circle') {
+      const dx = point.x - lastElement.startX;
+      const dy = point.y - lastElement.startY;
+      lastElement.radius = Math.sqrt(dx * dx + dy * dy);
+    }
 
-    // replace last
-    lines.splice(lines.length - 1, 1, lastLine);
-    setLines(lines.concat());
+    const newElements = [...elements];
+    newElements[newElements.length - 1] = lastElement;
+    setElements(newElements);
   };
 
   const handleMouseUp = () => {
@@ -51,8 +64,18 @@ export default function CanvasBoard() {
         >
           Eraser
         </button>
-        <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">Rectangle</button>
-        <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">Circle</button>
+        <button 
+          className={`px-4 py-2 rounded transition ${tool === 'rect' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+          onClick={() => setTool('rect')}
+        >
+          Rectangle
+        </button>
+        <button 
+          className={`px-4 py-2 rounded transition ${tool === 'circle' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+          onClick={() => setTool('circle')}
+        >
+          Circle
+        </button>
         <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">Sticky Note</button>
       </div>
 
@@ -69,24 +92,53 @@ export default function CanvasBoard() {
           onTouchEnd={handleMouseUp}
         >
           <Layer>
-            {lines.map((line, i) => (
-              <Line
-                key={i}
-                points={line.points}
-                stroke="#df4b26"
-                strokeWidth={5}
-                tension={0.5}
-                lineCap="round"
-                lineJoin="round"
-                globalCompositeOperation={
-                  line.tool === 'eraser' ? 'destination-out' : 'source-over'
-                }
-              />
-            ))}
+            {elements.map((el, i) => {
+              if (el.type === 'line') {
+                return (
+                  <Line
+                    key={i}
+                    points={el.points}
+                    stroke="#df4b26"
+                    strokeWidth={5}
+                    tension={0.5}
+                    lineCap="round"
+                    lineJoin="round"
+                    globalCompositeOperation={
+                      el.tool === 'eraser' ? 'destination-out' : 'source-over'
+                    }
+                  />
+                );
+              } else if (el.type === 'rect') {
+                return (
+                  <Rect
+                    key={i}
+                    x={el.startX}
+                    y={el.startY}
+                    width={el.width}
+                    height={el.height}
+                    stroke="#df4b26"
+                    strokeWidth={5}
+                  />
+                );
+              } else if (el.type === 'circle') {
+                return (
+                  <Circle
+                    key={i}
+                    x={el.startX}
+                    y={el.startY}
+                    radius={el.radius}
+                    stroke="#df4b26"
+                    strokeWidth={5}
+                  />
+                );
+              }
+              return null;
+            })}
           </Layer>
         </Stage>
       </div>
     </div>
   );
 }
+
 
