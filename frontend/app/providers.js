@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { loginUser, signupUser, createSession, joinSession as apiJoinSession } from "../lib/api";
 
 const AppStateContext = createContext(null);
 
@@ -73,20 +74,26 @@ export function AppStateProvider({ children }) {
     window.localStorage.setItem("cw-current-board", currentBoardId || "");
   }, [user, boards, chatMessages, currentBoardId]);
 
-  const login = ({ email, password }) => {
-    if (!email || !password) {
-      return { error: "Email and password are required." };
+  const login = async ({ email, password }) => {
+    if (!email || !password) return { error: "Email and password are required." };
+    try {
+      const userData = await loginUser(email, password);
+      setUser({ id: userData.id, name: userData.username, email: userData.email });
+      return { success: true };
+    } catch (err) {
+      return { error: err.message };
     }
-    setUser({ name: "Guest User", email });
-    return { success: true };
   };
 
-  const signup = ({ name, email, password }) => {
-    if (!name || !email || !password) {
-      return { error: "Name, email and password are required." };
+  const signup = async ({ name, email, password }) => {
+    if (!name || !email || !password) return { error: "Name, email and password are required." };
+    try {
+      const userData = await signupUser(name, email, password);
+      setUser({ id: userData.id, name: userData.username, email: userData.email });
+      return { success: true };
+    } catch (err) {
+      return { error: err.message };
     }
-    setUser({ name, email });
-    return { success: true };
   };
 
   const logout = () => {
@@ -94,31 +101,47 @@ export function AppStateProvider({ children }) {
     setCurrentBoardId(null);
   };
 
-  const createBoard = (title) => {
-    if (!title) {
-      return { error: "Board name cannot be empty." };
+  const createBoard = async (title) => {
+    if (!title) return { error: "Board name cannot be empty." };
+    if (!user) return { error: "You must be logged in to create a board." };
+    try {
+      const sessionData = await createSession(user.id);
+      const newBoard = {
+        id: sessionData.sessionCode,
+        title,
+        description: "A fresh collaborative room ready for your team.",
+        updatedAt: "Just now",
+        dbId: sessionData.id // the real backend ID
+      };
+      setBoards((current) => [newBoard, ...current]);
+      setCurrentBoardId(newBoard.id);
+      return { success: true, board: newBoard };
+    } catch (err) {
+      return { error: err.message };
     }
-    const newBoard = {
-      id: generateId(),
-      title,
-      description: "A fresh collaborative room ready for your team.",
-      updatedAt: "Just now",
-    };
-    setBoards((current) => [newBoard, ...current]);
-    setCurrentBoardId(newBoard.id);
-    return { success: true, board: newBoard };
   };
 
-  const joinBoard = (boardId) => {
-    if (!boardId) {
-      return { error: "Enter a valid board code to join." };
+  const joinBoard = async (boardId) => {
+    if (!boardId) return { error: "Enter a valid board code to join." };
+    if (!user) return { error: "You must be logged in to join a board." };
+    try {
+      await apiJoinSession(user.id, boardId);
+      // Ensure board exists in local list so it can be navigated to
+      const exists = boards.some((board) => board.id === boardId);
+      if (!exists) {
+        const newBoard = {
+          id: boardId,
+          title: "Joined Board " + boardId,
+          description: "A board you joined.",
+          updatedAt: "Just now",
+        };
+        setBoards((current) => [newBoard, ...current]);
+      }
+      setCurrentBoardId(boardId);
+      return { success: true };
+    } catch (err) {
+      return { error: err.message };
     }
-    const exists = boards.some((board) => board.id === boardId);
-    if (!exists) {
-      return { error: "That board code does not exist." };
-    }
-    setCurrentBoardId(boardId);
-    return { success: true };
   };
 
   const sendMessage = (roomId, text) => {
