@@ -75,4 +75,27 @@ public class SessionService {
                     return participantRepository.save(newParticipant);
                 });
     }
+
+    @Transactional
+    public void saveCanvasData(Long userId, Long sessionId, String canvasData) {
+        WhiteboardSession session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Session not found"));
+
+        SessionParticipant participant = participantRepository.findByUserIdAndSessionId(userId, sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("User is not part of this session"));
+
+        if (participant.getRole() == Role.VIEWER) {
+            throw new SecurityException("User does not have permission to edit this board");
+        }
+
+        session.setCanvasData(canvasData);
+        sessionRepository.save(session);
+    }
+
+    @Transactional(readOnly = true)
+    public String getCanvasData(Long sessionId) {
+        WhiteboardSession session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Session not found"));
+        return session.getCanvasData();
+    }
 }

@@ -30,6 +30,9 @@ public class WhiteboardSession {
     @Builder.Default
     private Boolean isActive = true;
 
+    @Column(name = "canvas_data", columnDefinition = "TEXT")
+    private String canvasData;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
