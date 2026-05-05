@@ -5,8 +5,15 @@ import { Stage, Layer, Line, Rect, Circle, Text } from 'react-konva';
 
 export default function CanvasBoard() {
   const [tool, setTool] = useState('pen');
+  const [color, setColor] = useState('#000000');
   const [elements, setElements] = useState([]);
   const isDrawing = useRef(false);
+
+  // WebSocket readiness dummy function
+  const broadcastDrawEvent = (element) => {
+    // TODO: Send element data via WebSocket to other clients
+    console.log('WebSocket Broadcast:', element);
+  };
 
   const handleMouseDown = (e) => {
     const pos = e.target.getStage().getPointerPosition();
@@ -14,18 +21,25 @@ export default function CanvasBoard() {
     if (tool === 'text') {
       const textVal = window.prompt("Enter text:");
       if (textVal) {
-        setElements([...elements, { type: 'text', x: pos.x, y: pos.y, text: textVal }]);
+        const newElement = { type: 'text', x: pos.x, y: pos.y, text: textVal, color };
+        setElements([...elements, newElement]);
+        broadcastDrawEvent(newElement);
       }
       return;
     }
 
     isDrawing.current = true;
+    let newElement = null;
     if (tool === 'pen' || tool === 'eraser') {
-      setElements([...elements, { type: 'line', tool, points: [pos.x, pos.y] }]);
+      newElement = { type: 'line', tool, points: [pos.x, pos.y], color };
     } else if (tool === 'rect') {
-      setElements([...elements, { type: 'rect', startX: pos.x, startY: pos.y, width: 0, height: 0 }]);
+      newElement = { type: 'rect', startX: pos.x, startY: pos.y, width: 0, height: 0, color };
     } else if (tool === 'circle') {
-      setElements([...elements, { type: 'circle', startX: pos.x, startY: pos.y, radius: 0 }]);
+      newElement = { type: 'circle', startX: pos.x, startY: pos.y, radius: 0, color };
+    }
+    
+    if (newElement) {
+      setElements([...elements, newElement]);
     }
   };
 
@@ -55,13 +69,18 @@ export default function CanvasBoard() {
   };
 
   const handleMouseUp = () => {
-    isDrawing.current = false;
+    if (isDrawing.current) {
+      isDrawing.current = false;
+      // Broadcast the finished shape/line
+      const lastElement = elements[elements.length - 1];
+      broadcastDrawEvent(lastElement);
+    }
   };
 
   return (
     <div className="flex flex-col items-center w-full h-full">
       {/* Toolbar */}
-      <div className="bg-white shadow-md rounded-lg p-2 mb-4 flex gap-4">
+      <div className="bg-white shadow-md rounded-lg p-2 mb-4 flex gap-4 items-center">
         <button 
           className={`px-4 py-2 rounded transition ${tool === 'pen' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
           onClick={() => setTool('pen')}
@@ -92,6 +111,17 @@ export default function CanvasBoard() {
         >
           Text / Note
         </button>
+
+        {/* Color Picker */}
+        <div className="flex items-center ml-4 border-l pl-4 border-gray-300">
+          <label className="mr-2 text-sm text-gray-600 font-medium">Color:</label>
+          <input 
+            type="color" 
+            value={color} 
+            onChange={(e) => setColor(e.target.value)}
+            className="w-8 h-8 rounded cursor-pointer border-none"
+          />
+        </div>
       </div>
 
       {/* Canvas Area */}
@@ -113,7 +143,7 @@ export default function CanvasBoard() {
                   <Line
                     key={i}
                     points={el.points}
-                    stroke="#df4b26"
+                    stroke={el.color}
                     strokeWidth={5}
                     tension={0.5}
                     lineCap="round"
@@ -131,7 +161,7 @@ export default function CanvasBoard() {
                     y={el.startY}
                     width={el.width}
                     height={el.height}
-                    stroke="#df4b26"
+                    stroke={el.color}
                     strokeWidth={5}
                   />
                 );
@@ -142,7 +172,7 @@ export default function CanvasBoard() {
                     x={el.startX}
                     y={el.startY}
                     radius={el.radius}
-                    stroke="#df4b26"
+                    stroke={el.color}
                     strokeWidth={5}
                   />
                 );
@@ -154,7 +184,7 @@ export default function CanvasBoard() {
                     y={el.y}
                     text={el.text}
                     fontSize={24}
-                    fill="#333"
+                    fill={el.color}
                   />
                 );
               }
