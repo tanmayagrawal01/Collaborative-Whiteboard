@@ -1,11 +1,15 @@
+"use client";
+
 import dynamic from 'next/dynamic';
+import { use } from 'react';
 
 const CanvasBoard = dynamic(() => import('../../../components/CanvasBoard'), {
   ssr: false,
 });
 
 export default function BoardRoom({ params }) {
-  const { id } = params;
+  const unwrappedParams = use(params);
+  const { id } = unwrappedParams;
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 flex flex-col">
@@ -20,3 +24,4 @@ export default function BoardRoom({ params }) {
     </div>
   );
 }
+
