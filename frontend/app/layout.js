@@ -1,4 +1,5 @@
 import "./globals.css";
+import { AppStateProvider } from "./providers";
 
 export const metadata = {
   title: "Collaborative Whiteboard",
@@ -8,8 +9,8 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>
-        {children}
+      <body className="min-h-screen bg-slate-950 text-slate-100">
+        <AppStateProvider>{children}</AppStateProvider>
       </body>
     </html>
   );
