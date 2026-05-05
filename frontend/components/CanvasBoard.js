@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
-import { Stage, Layer, Line, Rect, Circle } from 'react-konva';
+import { Stage, Layer, Line, Rect, Circle, Text } from 'react-konva';
 
 export default function CanvasBoard() {
   const [tool, setTool] = useState('pen');
@@ -9,9 +9,17 @@ export default function CanvasBoard() {
   const isDrawing = useRef(false);
 
   const handleMouseDown = (e) => {
-    isDrawing.current = true;
     const pos = e.target.getStage().getPointerPosition();
     
+    if (tool === 'text') {
+      const textVal = window.prompt("Enter text:");
+      if (textVal) {
+        setElements([...elements, { type: 'text', x: pos.x, y: pos.y, text: textVal }]);
+      }
+      return;
+    }
+
+    isDrawing.current = true;
     if (tool === 'pen' || tool === 'eraser') {
       setElements([...elements, { type: 'line', tool, points: [pos.x, pos.y] }]);
     } else if (tool === 'rect') {
@@ -37,6 +45,8 @@ export default function CanvasBoard() {
       const dx = point.x - lastElement.startX;
       const dy = point.y - lastElement.startY;
       lastElement.radius = Math.sqrt(dx * dx + dy * dy);
+    } else {
+      return; // text doesn't need mouse move
     }
 
     const newElements = [...elements];
@@ -76,11 +86,16 @@ export default function CanvasBoard() {
         >
           Circle
         </button>
-        <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">Sticky Note</button>
+        <button 
+          className={`px-4 py-2 rounded transition ${tool === 'text' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+          onClick={() => setTool('text')}
+        >
+          Text / Note
+        </button>
       </div>
 
       {/* Canvas Area */}
-      <div className="border-2 border-gray-300 rounded-lg overflow-hidden bg-white shadow-inner">
+      <div className="border-2 border-gray-300 rounded-lg overflow-hidden bg-white shadow-inner cursor-crosshair">
         <Stage 
           width={800} 
           height={600}
@@ -131,6 +146,17 @@ export default function CanvasBoard() {
                     strokeWidth={5}
                   />
                 );
+              } else if (el.type === 'text') {
+                return (
+                  <Text
+                    key={i}
+                    x={el.x}
+                    y={el.y}
+                    text={el.text}
+                    fontSize={24}
+                    fill="#333"
+                  />
+                );
               }
               return null;
             })}
@@ -140,5 +166,6 @@ export default function CanvasBoard() {
     </div>
   );
 }
+
 
 
