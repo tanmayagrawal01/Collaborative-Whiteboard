@@ -20,3 +20,8 @@ spring:
     redis:
       host: localhost
       port: 6379
+
+whiteboard:
+  redis:
+    channels:
+      draw: whiteboard:draw
