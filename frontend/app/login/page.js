@@ -18,9 +18,10 @@ export default function LoginPage() {
     }
   }, [user, router]);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    const result = login({ email: email.trim(), password });
+    setError(null);
+    const result = await login({ email: email.trim(), password });
     if (result.error) {
       setError(result.error);
       return;

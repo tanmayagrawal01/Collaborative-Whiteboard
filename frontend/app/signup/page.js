@@ -19,9 +19,10 @@ export default function SignupPage() {
     }
   }, [user, router]);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    const result = signup({ name: name.trim(), email: email.trim(), password });
+    setError(null);
+    const result = await signup({ name: name.trim(), email: email.trim(), password });
     if (result.error) {
       setError(result.error);
       return;

@@ -9,9 +9,10 @@ export default function RoomCreateJoin() {
   const [joinCode, setJoinCode] = useState("");
   const [status, setStatus] = useState(null);
 
-  const handleCreate = (event) => {
+  const handleCreate = async (event) => {
     event.preventDefault();
-    const result = createBoard(roomName.trim());
+    setStatus(null);
+    const result = await createBoard(roomName.trim());
     if (result.error) {
       setStatus({ type: "error", message: result.error });
       return;
@@ -20,9 +21,10 @@ export default function RoomCreateJoin() {
     setRoomName("");
   };
 
-  const handleJoin = (event) => {
+  const handleJoin = async (event) => {
     event.preventDefault();
-    const result = joinBoard(joinCode.trim());
+    setStatus(null);
+    const result = await joinBoard(joinCode.trim());
     if (result.error) {
       setStatus({ type: "error", message: result.error });
       return;

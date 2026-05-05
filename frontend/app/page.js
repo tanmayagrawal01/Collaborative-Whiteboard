@@ -1,14 +1,21 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { fetchHealthCheck } from "../lib/api";
 
-export default async function Home() {
-  let healthStatus = "Checking...";
-  try {
-    const health = await fetchHealthCheck();
-    healthStatus = health.status === "UP" ? "Backend is UP" : "Backend is DOWN";
-  } catch (err) {
-    healthStatus = "Backend is Unreachable";
-  }
+export default function Home() {
+  const [healthStatus, setHealthStatus] = useState("Checking...");
+
+  useEffect(() => {
+    fetchHealthCheck()
+      .then((health) => {
+        setHealthStatus(health.status === "UP" ? "Backend is UP ✅" : "Backend is DOWN ❌");
+      })
+      .catch(() => {
+        setHealthStatus("Backend is Unreachable ⚠️");
+      });
+  }, []);
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
