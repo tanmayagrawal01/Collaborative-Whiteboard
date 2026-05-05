@@ -47,4 +47,32 @@ public class SessionService {
 
         return session;
     }
+
+    @Transactional
+    public SessionParticipant joinSession(Long userId, String sessionCode, Role role) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        WhiteboardSession session = sessionRepository.findBySessionCode(sessionCode)
+                .orElseThrow(() -> new IllegalArgumentException("Session not found or invalid code"));
+
+        if (!session.getIsActive()) {
+            throw new IllegalStateException("This session is no longer active");
+        }
+
+        // Check if user is already in the session
+        return participantRepository.findByUserIdAndSessionId(user.getId(), session.getId())
+                .orElseGet(() -> {
+                    // Assign default Viewer role if none is specified or if trying to join as OWNER
+                    Role assignedRole = (role != null && role != Role.OWNER) ? role : Role.VIEWER;
+
+                    SessionParticipant newParticipant = SessionParticipant.builder()
+                            .user(user)
+                            .session(session)
+                            .role(assignedRole)
+                            .build();
+
+                    return participantRepository.save(newParticipant);
+                });
+    }
 }
