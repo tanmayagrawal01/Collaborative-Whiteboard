@@ -75,4 +75,19 @@ public class SessionService {
                     return participantRepository.save(newParticipant);
                 });
     }
+
+    @Transactional
+    public void saveCanvasData(Long sessionId, String canvasData) {
+        WhiteboardSession session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Session not found"));
+        session.setCanvasData(canvasData);
+        sessionRepository.save(session);
+    }
+
+    @Transactional(readOnly = true)
+    public String getCanvasData(Long sessionId) {
+        WhiteboardSession session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Session not found"));
+        return session.getCanvasData();
+    }
 }

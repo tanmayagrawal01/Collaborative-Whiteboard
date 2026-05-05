@@ -32,6 +32,23 @@ public class SessionController {
         return ResponseEntity.ok(participant);
     }
 
+    @PutMapping("/{id}/save")
+    public ResponseEntity<Void> saveCanvasState(@PathVariable Long id, @RequestBody SaveCanvasRequest request) {
+        sessionService.saveCanvasData(id, request.getCanvasData());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{id}/load")
+    public ResponseEntity<String> loadCanvasState(@PathVariable Long id) {
+        String canvasData = sessionService.getCanvasData(id);
+        return ResponseEntity.ok(canvasData);
+    }
+
+    @Data
+    public static class SaveCanvasRequest {
+        private String canvasData;
+    }
+
     @Data
     public static class CreateSessionRequest {
         private Long userId;
